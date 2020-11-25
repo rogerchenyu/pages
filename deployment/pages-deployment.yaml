@@ -17,7 +17,7 @@ spec:
         app: pages
     spec:
       containers:
-      - image: rogerchenyu/pages:1.0
+      - image: kapilpurohit85/pages:1.0
         name: pages
         ports:
           - containerPort: 8080
