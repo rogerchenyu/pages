@@ -5,7 +5,7 @@ metadata:
     app: pages
     tier: service
   name: pages
-  namespace: [student-name]
+  namespace: edgware
 spec:
   replicas: 1
   selector:
@@ -19,14 +19,52 @@ spec:
         app: pages
         tier: service
     spec:
+      volumes:
+        - name: node-dir
+          hostPath:
+            path: /edgware
       containers:
-        - image: [docker-username]/pages:service
+        - image: kapilpurohit85/pages:service
           name: pages
+          volumeMounts:
+            - mountPath: /edgware
+              name: node-dir
           ports:
             - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: "/actuator/health"
+              port:  8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 30
           env:
-            - name: PAGE_CONTENT
-              valueFrom:
-                configMapKeyRef:
-                  name: pages-config-map
-                  key: PAGE_CONTENT
+          - name: PAGE_CONTENT
+            valueFrom:
+              configMapKeyRef:
+                name: pages-config-map
+                key: PAGE_CONTENT
+          - name: SPRING_DATASOURCE_URL
+            value: jdbc:mysql://pages-mysql/pages
+          - name: SPRING_DATASOURCE_USERNAME
+            value: "root"
+          - name: DEBUG
+            value: "true"
+          - name: LOGGING_FILE_NAME
+            value: "edgware/logs/app.log"
+          - name: LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_WEB
+            value: debug
+          - name: LOGGING_LEVEL_ROOT
+            value: debug
+          - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+            value: "*"
+          - name: SPRING_DATASOURCE_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-pass
+                key: password
+
